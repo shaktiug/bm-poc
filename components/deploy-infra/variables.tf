@@ -9,26 +9,9 @@ variable "location" {
   }
 }
 
-variable "acr_name" {
-  type = string
+variable "infra_vars" {
 }
 
-
-variable "aks_service_principal" {
-  type      = map(string)
-  sensitive = true
-}
-
-variable "pg_username" {
-  type      = string
-  sensitive = true
-}
-
-variable "pg_password" {
-  type      = string
-  sensitive = true
-}
-
-variable "ssl_status" {
-  type = string
+variable "env" {
+  type    = string
 }
