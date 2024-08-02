@@ -26,8 +26,8 @@ def check_db_connection():
         conn = get_db_connection()
         conn.close()
         return jsonify({'message': 'Well done'})
-    except mysql.connection.Error as err:
-        return jsonify({'message': 'Maintenance'}), 500
+    except mysql.connector.Error as err:
+        return jsonify({'message': str(err)}), 500
     
 if __name__ == '__main__':
     app.run(debug=True)
