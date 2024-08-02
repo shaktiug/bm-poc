@@ -9,20 +9,20 @@ class TestBMApp(unittest.TestCase):
         self.bm.testing = True
 
     @patch('bm.get_db_connection')
-    def test_live_endpoint_status_success(self, mock_get_live_endpoint_status):
+    def test_live_endpoint_status_success(self, mock_get_db_connection):
         # Mock the database connection to return a successful connection
         mock_conn = MagicMock()
-        mock_get_live_endpoint_status = mock_conn
+        mock_get_db_connection.return_value = mock_conn
 
         response = self.bm.get('/live')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json, {'message': 'Well done'})
 
     @patch('bm.get_db_connection')
-    def test_live_endpoint_status_failure(self, mock_get_live_endpoint_status):
+    def test_live_endpoint_status_failure(self, mock_get_db_connection):
         # Mock the database connection to return a successful connection
     
-        mock_get_live_endpoint_status.side_effect = Exception('Maintenance')
+        mock_get_db_connection.status = Exception('Maintenance')
 
         response = self.bm.get('/live')
         self.assertEqual(response.status_code, 500)
