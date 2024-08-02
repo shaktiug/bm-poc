@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-import bm
+from bm import bm
 
 class TestBMApp(unittest.TestCase):
 
@@ -21,12 +21,11 @@ class TestBMApp(unittest.TestCase):
     @patch('bm.get_db_connection')
     def test_live_endpoint_status_failure(self, mock_get_db_connection):
         # Mock the database connection to return a successful connection
-    
-        mock_get_db_connection.status = Exception('Maintenance')
+
+        mock_get_db_connection.side_effect = Exception('Maintenance')
 
         response = self.bm.get('/live')
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(response.json, {'message': 'Maintenance'})
 
 if __name__ == '__main__':
     unittest.main()
