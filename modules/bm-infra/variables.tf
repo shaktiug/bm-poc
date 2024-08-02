@@ -4,8 +4,8 @@
 variable "location" {
   type = map(string)
   default = {
-    value  = "West Europe"
-    suffix = "westeurope" # The corresponding value of location that is used by Azure in naming AKS resource groups
+    value  = "East US"
+    suffix = "eastus" # The corresponding value of location that is used by Azure in naming AKS resource groups
   }
 }
 
@@ -16,6 +16,10 @@ variable "app" {
 
 variable "env" {
   type = string
+}
+
+variable "ado_password" {
+  default = "admin"
 }
 /*
 variable "aks_service_principal" {
