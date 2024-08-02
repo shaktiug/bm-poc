@@ -13,7 +13,14 @@ variable "acr_name" {
   type = string
 }
 
+variable "app" {
+  type = string
+  default = "bm"
+}
 
+variable "env" {
+  type = string
+}
 variable "aks_service_principal" {
   type      = map(string)
   sensitive = true
