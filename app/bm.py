@@ -29,5 +29,5 @@ def check_db_connection():
     except mysql.connection.Error as err:
         return jsonify({'message': 'Maintenance'}), 500
     
-if __name_ == '__main__':
+if __name__ == '__main__':
     app.run(debug=True)
