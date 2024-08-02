@@ -19,3 +19,15 @@ db_config = {
 def get_db_connection():
     conn = mysql.connector.connect(**db_config)
     return conn
+
+@app.route('/live', methods=['GET'])
+def check_db_connection():
+    try:
+        conn = get_db_connection()
+        conn.close()
+        return jsonify({'message': 'Well done'})
+    except mysql.connection.Error as err:
+        return jsonify({'message': 'Maintenance'}), 500
+    
+if __name_ == '__main__':
+    app.run(debug=True)
