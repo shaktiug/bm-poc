@@ -1,4 +1,4 @@
-variable aws_region {}
+variable region {}
 
 variable "env" {
   type = string
@@ -9,6 +9,6 @@ variable "env" {
 variable "project" {
   type = string
   description = "(Required) Project shorthand."
-  default     = "orp"
+  default     = "bm"
 }
 
