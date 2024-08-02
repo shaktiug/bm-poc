@@ -1,5 +1,5 @@
 resource "azurerm_private_dns_zone" "postgres_zone" {
-  name                = "testdb1919.private.postgres.database.azure.com"
+  name                = "${local.infra_prefix}-db.private.postgres.database.azure.com"
   resource_group_name = azurerm_resource_group.my_rg.name
 }
 

@@ -3,14 +3,14 @@
 ##
 
 resource "azurerm_postgresql_flexible_server" "postgresdb" {
-  name                         = "testdb1919"
+  name                         = "${local.infra_prefix}-db"
   resource_group_name          = azurerm_resource_group.my_rg.name
   location                     = var.location.value
   version                      = "12"
   delegated_subnet_id          = azurerm_subnet.snet_appgw_vm.id
   private_dns_zone_id          = azurerm_private_dns_zone.postgres_zone.id
-  administrator_login          = var.pg_username
-  administrator_password       = var.pg_password
+  administrator_login          = var.infra_vars.pg_username
+  administrator_password       = var.infra_vars.pg_password
   zone                         = "2"
   backup_retention_days        = "7"
   geo_redundant_backup_enabled = "true"
@@ -24,5 +24,5 @@ resource "azurerm_postgresql_flexible_server" "postgresdb" {
 resource "azurerm_postgresql_flexible_server_configuration" "postgres_ssl" {
   name      = "require_secure_transport"
   server_id = azurerm_postgresql_flexible_server.postgresdb.id
-  value     = var.ssl_status
+  value     = var.infra_vars.ssl_status
 }

@@ -1,5 +1,5 @@
 resource "azurerm_subnet" "appgw_subnet" {
-  name                 = "appgw_subnet"
+  name                 = "${local.infra_prefix}-appgw-subnet"
   resource_group_name  = azurerm_resource_group.my_rg.name
   virtual_network_name = azurerm_virtual_network.vnet_appgw.name
   address_prefixes     = ["10.0.3.0/24"]
@@ -9,7 +9,7 @@ resource "azurerm_subnet" "appgw_subnet" {
 
 
 resource "azurerm_public_ip" "appgwpip" {
-  name                = "appgw-pip"
+  name                = "${local.infra_prefix}-appgw-pip"
   sku                 = "Standard"
   resource_group_name = azurerm_resource_group.my_rg.name
   location            = var.location.value
@@ -20,7 +20,7 @@ resource "null_resource" "appgw-skeleton" {
 
   provisioner "local-exec" {
     command = <<-EOT
-              az network application-gateway create -n aks-appgw -l $loc -g $rg --sku standard_v2 --public-ip-address $pip --subnet $subnet
+              az network application-gateway create -n bm-$env-aks-appgw -l $loc -g $rg --sku standard_v2 --public-ip-address $pip --subnet $subnet
     EOT
     environment = {
       subnet = "${azurerm_subnet.appgw_subnet.id}"
@@ -28,6 +28,7 @@ resource "null_resource" "appgw-skeleton" {
       rg     = "${azurerm_resource_group.my_rg.name}"
       rgid   = "${azurerm_resource_group.my_rg.id}"
       pip    = "${azurerm_public_ip.appgwpip.name}"
+      env    = "${var.env}"
     }
   }
 
@@ -36,14 +37,14 @@ resource "null_resource" "appgw-skeleton" {
 
 
 data "azurerm_application_gateway" "appgw" {
-  name                = "aks-appgw"
+  name                = "${local.infra_prefix}-aks-appgw"
   resource_group_name = azurerm_resource_group.my_rg.name
   depends_on          = [null_resource.appgw-skeleton]
 }
 
 
 data "azurerm_kubernetes_cluster" "aks_data" {
-  name                = "aks-my-cluster"
+  name                = "${local.infra_prefix}-aks"
   resource_group_name = azurerm_resource_group.my_rg.name
   depends_on          = [azurerm_kubernetes_cluster.my_aks]
 }
@@ -51,15 +52,14 @@ data "azurerm_kubernetes_cluster" "aks_data" {
 resource "azurerm_role_assignment" "role_managed_identity_operator" {
   scope                            = azurerm_resource_group.my_rg.id
   role_definition_name             = "Managed Identity Operator"
-  principal_id                     = var.aks_service_principal.client_id
+  principal_id                     = var.infra_vars.aks_service_principal.client_id
   skip_service_principal_aad_check = true
 }
-
 
 resource "azurerm_role_assignment" "role_vm_contributor" {
   scope                            = azurerm_resource_group.my_rg.id
   role_definition_name             = "Virtual Machine Contributor"
-  principal_id                     = var.aks_service_principal.client_id
+  principal_id                     = var.infra_vars.aks_service_principal.client_id
   skip_service_principal_aad_check = true
 }
 
