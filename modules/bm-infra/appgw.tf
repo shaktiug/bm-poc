@@ -34,29 +34,29 @@ data "azurerm_application_gateway" "appgw" {
 }
 
 
-# data "azurerm_kubernetes_cluster" "aks_data" {
-#   name                = "${local.infra_prefix}-aks"
-#   resource_group_name = azurerm_resource_group.my_rg.name
-#   depends_on          = [azurerm_kubernetes_cluster.my_aks]
-# }
+data "azuread_service_principal" "aks_sp" {
+  client_id = var.infra_vars.aks_service_principal.client_id
+}
 
 locals {
   aks_rg = azurerm_kubernetes_cluster.my_aks.node_resource_group
   local_appgw_id = data.azurerm_application_gateway.appgw.id
   aks_cluster_rg_id = azurerm_resource_group.my_rg.id
+  appgw_vnet_id = azurerm_virtual_network.vnet_appgw.id
 }
+
 
 resource "azurerm_role_assignment" "role_managed_identity_operator" {
   scope                            = azurerm_resource_group.my_rg.id
   role_definition_name             = "Managed Identity Operator"
-  principal_id                     = var.infra_vars.aks_service_principal.client_id
+  principal_id                     = data.azuread_service_principal.aks_sp.object_id
   skip_service_principal_aad_check = true
 }
 
 resource "azurerm_role_assignment" "role_vm_contributor" {
   scope                            = azurerm_resource_group.my_rg.id
   role_definition_name             = "Virtual Machine Contributor"
-  principal_id                     = var.infra_vars.aks_service_principal.client_id
+  principal_id                     = data.azuread_service_principal.aks_sp.object_id
   skip_service_principal_aad_check = true
 }
 
@@ -103,6 +103,13 @@ resource "null_resource" "role-aad-contributor" {
 resource "azurerm_role_assignment" "role_aad_reader" {
   scope                            = local.aks_cluster_rg_id
   role_definition_name             = "Reader"
+  principal_id                     = azurerm_user_assigned_identity.aad-cid.principal_id
+  skip_service_principal_aad_check = true
+}
+
+resource "azurerm_role_assignment" "role_aad_vnet" {
+  scope                            = local.appgw_vnet_id
+  role_definition_name             = "Contributor"
   principal_id                     = azurerm_user_assigned_identity.aad-cid.principal_id
   skip_service_principal_aad_check = true
 }

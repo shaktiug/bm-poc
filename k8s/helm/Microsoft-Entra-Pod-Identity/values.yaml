@@ -8,7 +8,7 @@ verbosityLevel: 3
 #
 #
 appgw:
-    subscriptionId: 6ef124e1-2972-497e-91bc-ea1dc2126c7c
+    subscriptionId: ed8c06db-8633-49a0-8e3f-df0642c56aa5
     resourceGroup: bm-dev-rg
     name: bm-dev-aks-appgw
     usePrivateIP: false
@@ -26,7 +26,7 @@ appgw:
 #
 # kubernetes:
 #   watchNamespace: <namespace>
-
+#
 ################################################################################
 # Specify the authentication with Azure Resource Manager
 # Two authentication methods are available:
@@ -34,7 +34,7 @@ appgw:
 armAuth:
     type: aadPodIdentity
     identityResourceID: /subscriptions/ed8c06db-8633-49a0-8e3f-df0642c56aa5/resourcegroups/MC_bm-dev-rg_bm-dev-aks_eastus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/aad-cId
-    identityClientID: 7266b8d6-0f47-494d-8cc1-4bf27e454d0a
+    identityClientID: c656acbb-3487-4b0c-8184-1899246a79d4
 
 ## Alternatively you can use Service Principal credentials
 # armAuth:
