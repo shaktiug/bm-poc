@@ -42,6 +42,8 @@ data "azurerm_application_gateway" "appgw" {
 
 locals {
   aks_rg = azurerm_kubernetes_cluster.my_aks.node_resource_group
+  local_appgw_id = data.azurerm_application_gateway.appgw.id
+  aks_cluster_rg_id = azurerm_resource_group.my_rg.id
 }
 
 resource "azurerm_role_assignment" "role_managed_identity_operator" {
@@ -66,9 +68,9 @@ resource "azurerm_user_assigned_identity" "aad-cid" {
 }
 
 resource "azurerm_role_assignment" "role_aad_contributor" {
-  scope                            = data.azurerm_application_gateway.appgw.id  #scope is application gateway
+  scope                            = local.local_appgw_id  #scope is application gateway
   role_definition_name             = "Contributor"
-  principal_id                     = azurerm_user_assigned_identity.aad-cid.client_id  # aad-client-id
+  principal_id                     = azurerm_user_assigned_identity.aad-cid.principal_id   # aad-client-id
   skip_service_principal_aad_check = true
 
   depends_on = [azurerm_user_assigned_identity.aad-cid,null_resource.appgw-skeleton]
@@ -99,8 +101,8 @@ resource "null_resource" "role-aad-contributor" {
 */
 
 resource "azurerm_role_assignment" "role_aad_reader" {
-  scope                            = azurerm_resource_group.my_rg.id
+  scope                            = local.aks_cluster_rg_id
   role_definition_name             = "Reader"
-  principal_id                     = azurerm_user_assigned_identity.aad-cid.client_id
+  principal_id                     = azurerm_user_assigned_identity.aad-cid.principal_id
   skip_service_principal_aad_check = true
 }

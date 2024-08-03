@@ -1,0 +1,104 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-cm
+data:
+  default.conf: |-
+    server {
+        listen 80 default_server;
+        listen 443 ssl;
+        root /usr/share/nginx/html;
+        index index.html;
+        ssl_certificate /etc/nginx/ssl/tls.crt;
+        ssl_certificate_key /etc/nginx/ssl/tls.key;
+        location / {
+                try_files $uri $uri/ =404;
+        }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssl-redirect-deployment
+spec:
+  selector:
+    matchLabels:
+      app: ssl-redirect
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: ssl-redirect
+    spec:
+      containers:
+        - name: nginx
+          imagePullPolicy: Always
+          image: nginx:latest
+          ports:
+            - containerPort: 443
+          volumeMounts:
+          - mountPath: /etc/nginx/ssl
+            name: secret-volume
+          - mountPath: /etc/nginx/conf.d
+            name: configmap-volume
+      volumes:
+      - name: secret-volume
+        secret:
+          secretName: testsecret-tls
+      - name: configmap-volume
+        configMap:
+          name: nginx-cm
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssl-redirect-service
+spec:
+  selector:
+    app: ssl-redirect
+  ports:
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ssl-redirect-ingress
+  annotations:
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+    appgw.ingress.kubernetes.io/backend-hostname: "test"
+    appgw.ingress.kubernetes.io/backend-protocol: "https"
+    appgw.ingress.kubernetes.io/appgw-trusted-root-certificate: "test"
+    appgw.ingress.kubernetes.io/waf-policy-for-path : "/subscriptions/2ce9a29e-219e-422b-b9f8-5c5e54d5439e/resourceGroups/agic-e2e/providers/Microsoft.Network/applicationGatewayWebApplicationFirewallPolicies/waf-policy"
+spec:
+  ingressClassName: azure-application-gateway
+  tls:
+    - secretName: testsecret-tls
+  rules:
+    - http:
+        paths:
+        - path: /index.html
+          backend:
+            service:
+              name: ssl-redirect-service
+              port:
+                name: https
+          pathType: Exact
+        - path: /*
+          backend:
+            service:
+              name: ssl-redirect-service
+              port:
+                name: https
+          pathType: Prefix
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: testsecret-tls
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUI3ekNDQVpXZ0F3SUJBZ0lVSG4wSDhxcGdYaEN4Y3dNUWR6dnBENnY1c29zd0NnWUlLb1pJemowRUF3UXcKRHpFTk1Bc0dBMVVFQXd3RWNtOXZkREFlRncweU5EQXpNakV5TVRReE5EWmFGdzB5TnpBeE1Ea3lNVFF4TkRaYQpNQTh4RFRBTEJnTlZCQU1NQkhSbGMzUXdXVEFUQmdjcWhrak9QUUlCQmdncWhrak9QUU1CQndOQ0FBVFZ5d1dUCjhQSXFPczF2VzA0c0piNHBGYTBILzZNWnBWcllKK05BSm40VENVSTBBN0xzUVJkcmZJaklMSmo3dWhwamtEZ3AKbnowZ3ZrdGx5ODNsSlVoM280SE9NSUhMTUFrR0ExVWRFd1FDTUFBd0VRWUpZSVpJQVliNFFnRUJCQVFEQWdaQQpNQ01HQ1dDR1NBR0crRUlCRFFRV0ZoUk5lU0JHYVhKemRDQkRaWEowYVdacFkyRjBaVEFkQmdOVkhRNEVGZ1FVCkxzTFF1S2hBNXdCakw5b0xOTkNzakR0WEZDOHdOQVlEVlIwakJDMHdLNkVUcEJFd0R6RU5NQXNHQTFVRUF3d0UKY205dmRJSVVkLzJMSjV6WVdkdjFQallncWFKcGNZZ1dKTmd3Q3dZRFZSMFBCQVFEQWdYZ01CTUdBMVVkSlFRTQpNQW9HQ0NzR0FRVUZCd01CTUE4R0ExVWRFUVFJTUFhQ0JIUmxjM1F3Q2dZSUtvWkl6ajBFQXdRRFNBQXdSUUloCkFOYWw4N2NnblJNcmI5U3lDT2VKd0QyeGx4YlkrVGI2OStnT3VxS3F6YU04QWlCb05oTXB3V0cvem1wTklSUGUKYzlvMUFpQnFKMlhiY0kzeHpnRUtnbDdOU1E9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  tls.key: LS0tLS1CRUdJTiBFQyBQQVJBTUVURVJTLS0tLS0KQmdncWhrak9QUU1CQnc9PQotLS0tLUVORCBFQyBQQVJBTUVURVJTLS0tLS0KLS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSU51bWYwWHhrdzc2Q25rQlZoQktvZmNVbzdhM3gvc0hITnF2d3pDZ2FlMVFvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFMWNzRmsvRHlLanJOYjF0T0xDVytLUld0Qi8rakdhVmEyQ2ZqUUNaK0V3bENOQU95N0VFWAphM3lJeUN5WSs3b2FZNUE0S1o4OUlMNUxaY3ZONVNWSWR3PT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo=

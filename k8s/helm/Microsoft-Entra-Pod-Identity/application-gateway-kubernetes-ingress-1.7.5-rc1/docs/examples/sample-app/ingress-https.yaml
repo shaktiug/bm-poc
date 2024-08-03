@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sample-app
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+spec:
+  tls:
+    - secretName: "sample-app-tls"
+  rules:
+  - http:
+      paths:
+      - path: /
+        backend:
+          service:
+            name: sample-app
+            port:
+              number: 80
+        pathType: Exact
+        

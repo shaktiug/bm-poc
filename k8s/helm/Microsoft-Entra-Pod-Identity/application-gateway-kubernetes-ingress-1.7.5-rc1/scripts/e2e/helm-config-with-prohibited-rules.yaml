@@ -1,0 +1,13 @@
+appgw:
+  shared: true
+  prohibitedTargets:
+    - name: www.microsoft.com
+      hostname: www.microsoft.com
+      paths:
+        - "/landing/*"
+
+armAuth:
+  type: aadPodIdentity
+
+rbac:
+  enabled: true
