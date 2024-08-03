@@ -1,13 +1,3 @@
-resource "azurerm_subnet" "appgw_subnet" {
-  name                 = "${local.infra_prefix}-appgw-subnet"
-  resource_group_name  = azurerm_resource_group.my_rg.name
-  virtual_network_name = azurerm_virtual_network.vnet_appgw.name
-  address_prefixes     = ["10.0.3.0/24"]
-
-  depends_on = [azurerm_virtual_network.vnet_appgw]
-}
-
-
 resource "azurerm_public_ip" "appgwpip" {
   name                = "${local.infra_prefix}-appgw-pip"
   sku                 = "Standard"
@@ -20,10 +10,11 @@ resource "null_resource" "appgw-skeleton" {
 
   provisioner "local-exec" {
     command = <<-EOT
-              az network application-gateway create -n bm-$env-aks-appgw -l $loc -g $rg --sku standard_v2 --public-ip-address $pip --subnet $subnet
+              az network application-gateway create -n bm-$env-aks-appgw -l $loc -g $rg --sku standard_v2 --public-ip-address $pip --vnet-name $vnet --subnet $subnet --priority 100
     EOT
     environment = {
-      subnet = "${azurerm_subnet.appgw_subnet.id}"
+      vnet   = "${azurerm_virtual_network.vnet_appgw.name}"
+      subnet = "${azurerm_subnet.appgw_subnet.name}"
       loc    = "${var.location.suffix}"
       rg     = "${azurerm_resource_group.my_rg.name}"
       rgid   = "${azurerm_resource_group.my_rg.id}"
@@ -83,15 +74,22 @@ resource "null_resource" "role-aad-contributor" {
 
   provisioner "local-exec" {
     command = <<-EOT
-              appgwId=$(az network application-gateway show -n aks-appgw -g rg-private-aks-demo -o tsv --query "id")
+              appgwId=$(az network application-gateway show -n bm-$env-aks-appgw -g $rg -o tsv --query "id")
               az role assignment create --role Contributor --assignee $aadId --scope $appgwId
     EOT
     environment = {
+      vnet   = "${azurerm_virtual_network.vnet_appgw.name}"
+      subnet = "${azurerm_subnet.appgw_subnet.name}"
+      loc    = "${var.location.suffix}"
+      rg     = "${azurerm_resource_group.my_rg.name}"
+      rgid   = "${azurerm_resource_group.my_rg.id}"
+      pip    = "${azurerm_public_ip.appgwpip.name}"
+      env    = "${var.env}"
       aadId = "${azurerm_user_assigned_identity.aad-cid.client_id}"
     }
   }
 
-  depends_on = [azurerm_user_assigned_identity.aad-cid]
+  depends_on = [azurerm_user_assigned_identity.aad-cid,null_resource.appgw-skeleton]
 }
 
 resource "azurerm_role_assignment" "role_aad_reader" {

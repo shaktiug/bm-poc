@@ -70,8 +70,8 @@ resource "azurerm_linux_virtual_machine" "ado-agent" {
   name                            = "vm-ado-agent"
   location                        = var.location.value
   resource_group_name             = azurerm_resource_group.my_rg.name
-  size                            = "Standard_E2ads_v5"
-  admin_username                  = "admin"
+  size                            = "Standard_B2ms"
+  admin_username                  = "ado-admin"
   admin_password                  = var.ado_password
   disable_password_authentication = false
   #custom_data                     = "I2Nsb3VkLWNvbmZpZwpwYWNrYWdlX3VwZ3JhZGU6IHRydWUKcnVuY21kOgogIC0gc3VkbyBhcHQgaW5zdGFsbCBvcGVuamRrLTgtamRrIC15CiAgLSB3Z2V0IC1xTyAtIGh0dHBzOi8vcGtnLmplbmtpbnMuaW8vZGViaWFuLXN0YWJsZS9qZW5raW5zLmlvLmtleSB8IHN1ZG8gYXB0LWtleSBhZGQgLQogIC0gc2ggLWMgJ2VjaG8gZGViIGh0dHBzOi8vcGtnLmplbmtpbnMuaW8vZGViaWFuLXN0YWJsZSBiaW5hcnkvID4gL2V0Yy9hcHQvc291cmNlcy5saXN0LmQvamVua2lucy5saXN0JwogIC0gc3VkbyBhcHQtZ2V0IHVwZGF0ZSAmJiBzdWRvIGFwdC1nZXQgaW5zdGFsbCBqZW5raW5zIC15CiAgLSBzdWRvIHNlcnZpY2UgamVua2lucyByZXN0YXJ0"

@@ -3,16 +3,17 @@
 ##
 
 resource "azurerm_postgresql_flexible_server" "postgresdb" {
-  name                         = "${local.infra_prefix}-db"
+  name                         = "${local.infra_prefix}-pgdb"
   resource_group_name          = azurerm_resource_group.my_rg.name
-  location                     = var.location.value
+  location                     = "East US 2"
   version                      = "12"
-  delegated_subnet_id          = azurerm_subnet.snet_appgw_vm.id
+  delegated_subnet_id          = azurerm_subnet.postgres_subnet.id
   private_dns_zone_id          = azurerm_private_dns_zone.postgres_zone.id
   administrator_login          = var.infra_vars.pg_username
   administrator_password       = var.infra_vars.pg_password
   zone                         = "1"
   backup_retention_days        = "7"
+  public_network_access_enabled = false
   geo_redundant_backup_enabled = "true"
   storage_mb                   = 32768
 

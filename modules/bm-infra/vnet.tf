@@ -25,8 +25,8 @@ resource "azurerm_virtual_network" "vnet_appgw" {
   resource_group_name = azurerm_resource_group.my_rg.name
   address_space       = [var.infra_vars.appgw_vnet_addr_space]
 }
-resource "azurerm_subnet" "snet_appgw_vm" {
-  name                 = "${local.infra_prefix}-appgw-subnet"
+resource "azurerm_subnet" "postgres_subnet" { #Postgres  DB subnet
+  name                 = "${local.infra_prefix}-pg-subnet"
   resource_group_name  = azurerm_resource_group.my_rg.name
   virtual_network_name = azurerm_virtual_network.vnet_appgw.name
   address_prefixes     = [var.infra_vars.appgw_subnet_addr]
@@ -40,6 +40,15 @@ resource "azurerm_subnet" "snet_appgw_vm" {
       ]
     }
   }
+}
+
+resource "azurerm_subnet" "appgw_subnet" {
+  name                 = "${local.infra_prefix}-appgw-subnet"
+  resource_group_name  = azurerm_resource_group.my_rg.name
+  virtual_network_name = azurerm_virtual_network.vnet_appgw.name
+  address_prefixes     = ["10.0.10.0/24"]
+
+  depends_on = [azurerm_virtual_network.vnet_appgw]
 }
 
 

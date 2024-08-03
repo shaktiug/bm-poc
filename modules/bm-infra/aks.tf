@@ -20,7 +20,7 @@ resource "azurerm_kubernetes_cluster" "my_aks" {
   default_node_pool {
     name                = "default"
     node_count          = 1
-    vm_size             = "standard_d2ads_v5"
+    vm_size             = "Standard_B2ms"
     type                = "VirtualMachineScaleSets"
     enable_auto_scaling = true
     min_count           = 1
@@ -42,7 +42,7 @@ resource "azurerm_role_assignment" "role_acrpull" {
 }
 
 resource "azurerm_container_registry" "acr" {
-  name                = "${local.infra_acr_prefix}acr"
+  name                = "${local.infra_acr_prefix}acr1919"
   resource_group_name = azurerm_resource_group.my_rg.name
   location            = var.location.value
   sku                 = "Standard"
