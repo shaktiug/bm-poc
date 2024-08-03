@@ -15,3 +15,8 @@ variable "infra_vars" {
 variable "env" {
   type    = string
 }
+
+variable "app" {
+  type = string
+  default = "bm"
+}

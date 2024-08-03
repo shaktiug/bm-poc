@@ -9,8 +9,8 @@ verbosityLevel: 3
 #
 appgw:
     subscriptionId: 6ef124e1-2972-497e-91bc-ea1dc2126c7c
-    resourceGroup: rg-private-aks-demo
-    name: aks-appgw
+    resourceGroup: bm-dev-rg
+    name: bm-dev-aks-appgw
     usePrivateIP: false
 
     # Setting appgw.shared to "true" will create an AzureIngressProhibitedTarget CRD.
@@ -33,8 +33,8 @@ appgw:
 # - Option 1: AAD-Pod-Identity (https://github.com/Azure/aad-pod-identity)
 armAuth:
     type: aadPodIdentity
-    identityResourceID: /subscriptions/6ef124e1-2972-497e-91bc-ea1dc2126c7c/resourceGroups/MC_rg-private-aks-demo_aks-my-cluster_westeurope/providers/Microsoft.ManagedIdentity/userAssignedIdentities/aad-cId
-    identityClientID: c466fa7a-5dda-4dfd-9ad5-71ff6a39b70f
+    identityResourceID: /subscriptions/ed8c06db-8633-49a0-8e3f-df0642c56aa5/resourcegroups/MC_bm-dev-rg_bm-dev-aks_eastus2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/aad-cId
+    identityClientID: 7266b8d6-0f47-494d-8cc1-4bf27e454d0a
 
 ## Alternatively you can use Service Principal credentials
 # armAuth:

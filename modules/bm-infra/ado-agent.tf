@@ -3,7 +3,7 @@
 #
 
 resource "azurerm_subnet" "vm_subnet" {
-  name                 = "vm_subnet"
+  name                 = "${local.infra_prefix}-vm_subnet"
   resource_group_name  = azurerm_resource_group.my_rg.name
   virtual_network_name = azurerm_virtual_network.vnet_appgw.name
   address_prefixes     = ["10.0.4.0/24"]
@@ -11,7 +11,7 @@ resource "azurerm_subnet" "vm_subnet" {
 
 
 resource "azurerm_public_ip" "pip_azure_ado-agent" {
-  name                = "pip-azure-ado-agent"
+  name                = "${local.infra_prefix}-pip-azure-ado-agent"
   location            = var.location.value
   resource_group_name = azurerm_resource_group.my_rg.name
 
@@ -21,7 +21,7 @@ resource "azurerm_public_ip" "pip_azure_ado-agent" {
 
 #Create Network Security Group and rule
 resource "azurerm_network_security_group" "ado-agent-nsg" {
-  name                = "myNetworkSecurityGroup"
+  name                = "${local.infra_prefix}-nsg"
   location            = var.location.value
   resource_group_name = azurerm_resource_group.my_rg.name
 
@@ -48,7 +48,7 @@ resource "azurerm_network_security_rule" "ado-agent-rules" {
 
 
 resource "azurerm_network_interface" "ado-agent_nic" {
-  name                = "nic-ado-agent"
+  name                = "${local.infra_prefix}-nic-ado-agent"
   location            = var.location.value
   resource_group_name = azurerm_resource_group.my_rg.name
   ip_configuration {
@@ -67,7 +67,7 @@ resource "azurerm_network_interface_security_group_association" "example" {
 
 
 resource "azurerm_linux_virtual_machine" "ado-agent" {
-  name                            = "vm-ado-agent"
+  name                            = "${local.infra_prefix}-vm-ado-agent"
   location                        = var.location.value
   resource_group_name             = azurerm_resource_group.my_rg.name
   size                            = "Standard_B2ms"
