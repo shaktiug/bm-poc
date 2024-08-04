@@ -45,7 +45,7 @@ stages:
         - ${{ if contains(parameters.Environment, 'Prod') }}:
             - group: bm-prod-deploy-variables
     pool:
-      vmImage: $(vmImageName)
+      name: $(vmImageName)
     steps:
     - checkout: self
     - ${{ if contains(parameters.Environment, 'Dev') }}:
@@ -198,7 +198,7 @@ stages:
     - job: DeployToDev
       displayName: Deploy to Dev Kubernetes Cluster      
       pool:
-        vmImage: $(vmImageName)
+        name: $(vmImageName)
       steps:
       - task: KubernetesManifest@0
         displayName: 'Create Secret Dev'
@@ -235,7 +235,7 @@ stages:
     - job: DeployToUAT      
       displayName: Deploy to UAT Kubernetes Cluster      
       pool:
-        vmImage: $(vmImageName)
+        name: $(vmImageName)
       steps:
       - task: KubernetesManifest@0
         displayName: 'Create Secret UAT'
@@ -290,7 +290,7 @@ stages:
       - DeployToUAT
       - waitForValidation      
       pool:
-        vmImage: $(vmImageName)
+        name: $(vmImageName)
       steps:
       - task: KubernetesManifest@0
         displayName: 'Create Secret Prod'
