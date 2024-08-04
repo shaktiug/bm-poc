@@ -27,7 +27,7 @@ variables:
     - name: tagDev
       value: '$(Build.BuildId)'
     - name: dockerfilePath
-      value: '$(Build.SourcesDirectory)/Dockerfile'
+      value: '$(Build.SourcesDirectory)/app/Dockerfile'
     - name: latest
       value: 'latest-aks'
     - name: vmImageName
