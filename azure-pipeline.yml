@@ -34,8 +34,71 @@ variables:
       value: 'ado-pool'
     - ${{ if contains(parameters.Environment, 'Prod') }}:
         - group: bm-prod-deploy-variable
+    - name: sonarQubeConnection
+      value: 'xxx'
+    - name: sonarProjectKey
+      value: 'xxx'
+    - name: sonarProjectName
+      value: yyy
+    - name: sonarProjectVersion
+      value: '1.0'
 
 stages:
+- stage: sonar_scan
+  displayName: Lint_Unit_Test_Sonar_Scan
+  jobs:
+  - job: Sonar_Scan
+    displayName: Lint_Unit_Test_Sonar_Scan
+    pool:
+      name: $(vmImageName)
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+
+    - script: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+      displayName: 'Install dependencies'
+
+    - script: |
+        source venv/bin/activate
+        pylint **/*.py
+      displayName: 'Run pylint linting'
+
+    - task: SonarQubePrepare@5
+      inputs:
+        SonarQube: $(sonarQubeConnection)
+        scannerMode: 'CLI'
+        configMode: 'manual'
+        cliProjectKey: $(sonarProjectKey)
+        cliProjectName: $(sonarProjectName)
+        cliProjectVersion: $(sonarProjectVersion)
+        extraProperties: |
+          sonar.python.version=3.x
+
+    - script: |
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        # Add any other build steps here
+      displayName: 'Install dependencies and prepare environment'
+
+    - task: SonarQubeAnalyze@5
+
+    - task: SonarQubePublish@5
+      inputs:
+        pollingTimeoutSec: '300'
+    
+    - bash: |
+          cd app/
+          python -m unitest test_bm.py
+      displayName: 'Unit Test'
+  
+
+
 - stage: Build
   displayName: Build Stage/Prod
   jobs:  
@@ -245,7 +308,6 @@ stages:
             namespace: $(K8S_NAMESPACE_Dev)
             secretName: bmdevacr1919
             dockerRegistryEndpoint: $(CONTAINER_REGISTRY_DEV_CONN)
-           
       
       - bash: |
           touch $(System.DefaultWorkingDirectory)/app/k8s/deployment_UAT.yml
