@@ -40,7 +40,6 @@ stages:
   displayName: Build Stage/Prod
   jobs:  
   - job: Docker_Build_Push
-    dependsOn: BM_Build
     displayName: Docker Build and Push
     variables:        
         - ${{ if contains(parameters.Environment, 'Prod') }}:
