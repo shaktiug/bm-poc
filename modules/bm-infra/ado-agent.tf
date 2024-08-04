@@ -6,7 +6,7 @@ resource "azurerm_subnet" "vm_subnet" {
   name                 = "${local.infra_prefix}-vm_subnet"
   resource_group_name  = azurerm_resource_group.my_rg.name
   virtual_network_name = azurerm_virtual_network.vnet_appgw.name
-  address_prefixes     = ["10.0.4.0/24"]
+  address_prefixes     = [var.infra_vars.ado_agent_addr]
 }
 
 

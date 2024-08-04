@@ -5,7 +5,7 @@
 resource "azurerm_postgresql_flexible_server" "postgresdb" {
   name                         = "${local.infra_prefix}-pgdb"
   resource_group_name          = azurerm_resource_group.my_rg.name
-  location                     = "East US 2"
+  location                     = var.location.value
   version                      = "12"
   delegated_subnet_id          = azurerm_subnet.postgres_subnet.id
   private_dns_zone_id          = azurerm_private_dns_zone.postgres_zone.id

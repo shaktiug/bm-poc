@@ -39,10 +39,10 @@ spec:
         app: api
         tier: backend
     spec:
-      imagePullSecrets:
-      - name: bmdevacr1919
+      # imagePullSecrets:
+      # - name: bmdevacr1919
       containers:
-      - image: bmdevacr1919.azurecr.io/bm-app:v1
+      - image: Image_URL
         imagePullPolicy: Always
         resources:
           requests:

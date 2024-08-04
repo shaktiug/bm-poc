@@ -8,12 +8,6 @@ resource "helm_release" "entra-pod-identity" {
   verify      = false
 
   values = [
-    "${file("../../k8s/helm/Microsoft-Entra-Pod-Identity/values.yaml")}"
-  ]
-  
-  depends_on = [
-    azurerm_kubernetes_cluster.my_aks,
-    azurerm_role_assignment.role_aad_contributor,
-    azurerm_role_assignment.role_aad_reader
+    "${file(var.values)}"
   ]
 }

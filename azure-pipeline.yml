@@ -1,0 +1,325 @@
+parameters:
+- name: Environment
+  values:
+  - Dev
+  - Prod  
+
+trigger:
+- none
+
+# resources:      
+#   repositories: 
+#   - repository: cep-idb-app
+#     name: Web_and_Commerce_Solutions/_git/cep-idb-app
+#     type: git 
+#     ref: release-app
+#   - repository: cep-idb-monitor
+#     name: Web_and_Commerce_Solutions/_git/cep-idb-monitor
+#     type: git 
+#     ref: master
+#   - repository: BM-repo
+#     name: Web_and_Commerce_Solutions/_git/BM-repo
+#     type: git 
+#     ref: release-api
+
+variables:
+    - group: bm-dev-deploy-variables
+    - name: tagDev
+      value: '$(Build.BuildId)'
+    - name: dockerfilePath
+      value: '$(Build.SourcesDirectory)/Dockerfile'
+    - name: latest
+      value: 'latest-aks'
+    - name: vmImageName
+      value: 'ubuntu-latest'
+    - ${{ if contains(parameters.Environment, 'Prod') }}:
+        - group: bm-prod-deploy-variable
+
+stages:
+- stage: Build
+  displayName: Build Stage/Prod
+  jobs:  
+  - job: Docker_Build_Push
+    dependsOn: BM_Build
+    displayName: Docker Build and Push
+    variables:        
+        - ${{ if contains(parameters.Environment, 'Prod') }}:
+            - group: bm-prod-deploy-variables
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - checkout: self
+    - ${{ if contains(parameters.Environment, 'Dev') }}:
+        - task: Bash@3
+          name: ClientIP
+          inputs:          
+              targetType: 'inline'
+              script: |
+                IP=($(curl -s http://ipinfo.io/json | jq '.ip' | sed -e 's/^"//' -e 's/"$//'))
+                echo "This Microsoft hosted agent public IP is: $IP"
+                echo "##vso[task.setvariable variable=ip;isOutput=true]$IP"           
+        
+        - task: AzureCLI@2
+          inputs:
+            azureSubscription: 'Free Trial(ed8c06db-8633-49a0-8e3f-df0642c56aa5)'
+            scriptType: 'pscore'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              az acr network-rule add -n $(CONTAINER_REGISTRY_Dev) --ip-address $(ClientIP.ip)
+              az acr network-rule list --name $(CONTAINER_REGISTRY_Dev)
+              sleep 2m
+                
+        - task: Docker@2
+          displayName: 'Docker Build Dev'
+          inputs:
+            command: build
+            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            repository: $(IMAGE_REPO_Dev)
+            Dockerfile: $(dockerfilePath)
+            tags: |
+                $(tagDev)
+
+        - task: Docker@2
+          displayName: 'Docker Push Dev'
+          inputs:
+            command: push
+            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            repository: $(IMAGE_REPO_Dev)
+            tags: |
+                    $(tagDev)
+                    
+        - task: AzureCLI@2
+          inputs:
+            azureSubscription: 'Free Trial(ed8c06db-8633-49a0-8e3f-df0642c56aa5)'
+            scriptType: 'pscore'
+            scriptLocation: 'inlineScript'
+            inlineScript: |            
+              az acr network-rule remove -n $(CONTAINER_REGISTRY_Dev) --ip-address $(ClientIP.ip)
+              az acr network-rule list --name $(CONTAINER_REGISTRY_Dev)
+
+    - ${{ if contains(parameters.Environment, 'Prod') }}:
+        - task: Bash@3
+          name: Tag
+          inputs:
+            targetType: 'inline'
+            script: |
+                dateformat=`date +'%m_%d_%Y_%H_%M'`
+                imagetag='release_'"$dateformat"'_prod'
+                echo "##vso[task.setvariable variable=tag;isOutput=true]$imagetag"
+        - task: Bash@3
+          name: ClientIP
+          inputs:          
+              targetType: 'inline'
+              script: |
+                IP=($(curl -s http://ipinfo.io/json | jq '.ip' | sed -e 's/^"//' -e 's/"$//'))
+                echo "This Microsoft hosted agent public IP is: $IP"
+                echo "##vso[task.setvariable variable=ip;isOutput=true]$IP"           
+        - task: AzureCLI@2
+          inputs:
+            azureSubscription: 'Free Trial(ed8c06db-8633-49a0-8e3f-df0642c56aa5)'
+            scriptType: 'pscore'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              az acr network-rule add -n $(CONTAINER_REGISTRY_Dev) --ip-address $(ClientIP.ip)
+              az acr network-rule list --name $(CONTAINER_REGISTRY_Dev)
+              sleep 2m
+        - task: AzureCLI@2
+          inputs:
+            azureSubscription: 'Free Trial(ed8c06db-8633-49a0-8e3f-df0642c56aa5)'
+            scriptType: 'pscore'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              az acr network-rule add -n $(CONTAINER_REGISTRY_Prod) --ip-address $(ClientIP.ip)
+              az acr network-rule list --name $(CONTAINER_REGISTRY_Prod)
+              sleep 2m
+        - task: Docker@2
+          displayName: 'Docker Build UAT'
+          inputs:
+            command: build
+            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            repository: $(IMAGE_REPO_Dev)
+            Dockerfile: $(dockerfilePath)
+            tags: |
+                $(Tag.tag)
+        - task: Docker@2
+          displayName: 'Docker Build Prod'
+          inputs:
+            command: build
+            containerRegistry: $(CONTAINER_REGISTRY_Prod)
+            repository: $(IMAGE_REPO_Prod)
+            Dockerfile: $(dockerfilePath)
+            tags: |
+                $(Tag.tag)
+        - task: Docker@2
+          displayName: 'Docker Push UAT'
+          inputs:
+            command: push
+            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            repository: $(IMAGE_REPO_Dev)
+            tags: |
+                $(Tag.tag)          
+        - task: Docker@2
+          displayName: 'Docker Push Prod'
+          inputs:
+            command: push
+            containerRegistry: $(CONTAINER_REGISTRY_Prod)
+            repository: $(IMAGE_REPO_Prod)
+            tags: |
+                $(Tag.tag)
+        - task: AzureCLI@2
+          inputs:
+            azureSubscription: 'Free Trial(ed8c06db-8633-49a0-8e3f-df0642c56aa5)'
+            scriptType: 'pscore'
+            scriptLocation: 'inlineScript'
+            inlineScript: |            
+              az acr network-rule remove -n $(CONTAINER_REGISTRY_Dev) --ip-address $(ClientIP.ip)
+              az acr network-rule list --name $(CONTAINER_REGISTRY_Dev)
+        - task: AzureCLI@2
+          inputs:
+            azureSubscription: 'Free Trial(ed8c06db-8633-49a0-8e3f-df0642c56aa5)'
+            scriptType: 'pscore'
+            scriptLocation: 'inlineScript'
+            inlineScript: |            
+              az acr network-rule remove -n $(CONTAINER_REGISTRY_Prod) --ip-address $(ClientIP.ip)
+              az acr network-rule list --name $(CONTAINER_REGISTRY_Prod)
+    
+- stage: Deploy
+  dependsOn: Build
+  displayName: Deploy to Kubernetes Cluster
+  variables:
+    - group: bm-dev-deploy-variables
+    - ${{ if contains(parameters.Environment, 'Prod') }}:
+        # map the output variable from Docker_Build_Push into this job
+        - name: ProdTag
+          value: $[ stageDependencies.Build.Docker_Build_Push.outputs['Tag.tag'] ]
+          #value: "release_12_09_2021_15_35_prod"
+        - group: bm-prod-deploy-variables
+  jobs:
+  - ${{ if contains(parameters.Environment, 'Dev') }}:
+    - job: DeployToDev
+      displayName: Deploy to Dev Kubernetes Cluster      
+      pool:
+        vmImage: $(vmImageName)
+      steps:
+      - task: KubernetesManifest@0
+        displayName: 'Create Secret Dev'
+        inputs:
+            action: createSecret
+            kubernetesServiceConnection: $(K8S_CLS_Dev)
+            namespace: $(K8S_NAMESPACE_Dev)
+            secretName: bmdevacr1919
+            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_Dev)     
+        
+      
+      - bash: |
+          sed -i "s|Image_URL|$(IMAGE_REPO_URL_Dev)|g" $(System.DefaultWorkingDirectory)/app/k8s/api-deployment.yml
+          
+          #sed -i "s|Agent_Pool|$(AGENT_POOL_Dev)|g" $(System.DefaultWorkingDirectory)/app/k8s/api-deployment.yml
+          
+          echo -e "********** Start of File *************"
+          cat $(System.DefaultWorkingDirectory)/app/k8s/api-deployment.yml
+          echo "********** End Of File *************"
+        displayName: 'Update & Print Deployment yaml Dev'
+        
+      - task: KubernetesManifest@0
+        displayName: 'Apply Deployment Yml Dev'        
+        inputs:
+            kubernetesServiceConnection: $(K8S_CLS_Dev)
+            namespace: $(K8S_NAMESPACE_Dev)
+            manifests: |
+                $(System.DefaultWorkingDirectory)/app/k8s/api-deployment.yml
+                $(System.DefaultWorkingDirectory)/app/k8s/ingress.yml
+            containers: '$(IMAGE_REPO_URL_Dev):$(tagDev)'          
+            imagePullSecrets: bmdevacr1919
+                            
+  - ${{ if contains(parameters.Environment, 'Prod') }}:
+    - job: DeployToUAT      
+      displayName: Deploy to UAT Kubernetes Cluster      
+      pool:
+        vmImage: $(vmImageName)
+      steps:
+      - task: KubernetesManifest@0
+        displayName: 'Create Secret UAT'
+        inputs:
+            action: createSecret
+            kubernetesServiceConnection: $(K8S_CLS_Dev)
+            namespace: $(K8S_NAMESPACE_Dev)
+            secretName: bmdevacr1919
+            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_Dev)
+           
+      
+      - bash: |
+          touch $(System.DefaultWorkingDirectory)/app/k8s/deployment_UAT.yml
+          
+          sed "s|Image_URL|$(IMAGE_REPO_URL_Dev)|g" $(System.DefaultWorkingDirectory)/app/k8s/api-deployment.yml | tee $(System.DefaultWorkingDirectory)/app/k8s/deployment_UAT.yml
+          
+          #sed -i "s|Agent_Pool|$(AGENT_POOL_Dev)|g" $(System.DefaultWorkingDirectory)/app/k8s/deployment_UAT.yml
+          
+          echo -e "\n********** Start of File *************"
+          cat $(System.DefaultWorkingDirectory)/app/k8s/deployment_UAT.yml
+          echo -e "\n********** End Of File *************"
+          echo -e "\n $(ProdTag)"
+        displayName: 'Update & Print Deployment yaml UAT'        
+        
+      - task: KubernetesManifest@0
+        displayName: 'Apply Deployment Yml UAT'
+        inputs:
+            kubernetesServiceConnection: $(K8S_CLS_Dev)
+            namespace: $(K8S_NAMESPACE_Dev)
+            manifests: |
+                $(System.DefaultWorkingDirectory)/app/k8s/deployment_UAT.yml
+            containers: '$(IMAGE_REPO_URL_Dev):$(ProdTag)'
+            imagePullSecrets: bmdevacr1919
+          
+    - job: waitForValidation
+      displayName: Wait for external validation
+      dependsOn:
+      - DeployToUAT
+      pool: server
+      timeoutInMinutes: 2880
+      steps:
+      - task: ManualValidation@0
+        timeoutInMinutes: 2880
+        inputs:
+            notifyUsers: |
+                mannupoc9971@outlook.com
+            instructions: 'Please validate the build configuration and resume'
+    
+    - job: DeployToProd
+      displayName: 'Deploy to Prod Kubernetes Cluster'
+      dependsOn:
+      - DeployToUAT
+      - waitForValidation      
+      pool:
+        vmImage: $(vmImageName)
+      steps:
+      - task: KubernetesManifest@0
+        displayName: 'Create Secret Prod'
+        inputs:
+            action: createSecret
+            kubernetesServiceConnection: $(K8S_CLS_Prod)
+            namespace: $(K8S_NAMESPACE_Prod)
+            secretName: bmprodacr1919
+            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_Prod)
+            
+      
+      - bash: |
+          touch $(System.DefaultWorkingDirectory)/app/k8s/deployment_Prod.yml
+          
+          sed "s|Image_URL|$(IMAGE_REPO_URL_Prod)|g" $(System.DefaultWorkingDirectory)/app/k8s/api-deployment.yml | tee $(System.DefaultWorkingDirectory)/app/k8s/deployment_Prod.yml
+          
+          echo -e "\n********** Start of File *************"
+          cat $(System.DefaultWorkingDirectory)/app/k8s/deployment_Prod.yml
+          echo -e "\n********** End Of File *************"
+        displayName: 'Update & Print Deployment yaml Prod'      
+
+      - task: KubernetesManifest@0
+        displayName: 'Apply Deployment Yml Prod'
+        inputs:
+            kubernetesServiceConnection: $(K8S_CLS_Prod)
+            namespace: $(K8S_NAMESPACE_Prod)
+            manifests: |
+                $(System.DefaultWorkingDirectory)/app/k8s/deployment_Prod.yml
+                $(System.DefaultWorkingDirectory)/app/k8s/ingress.yml
+            containers: '$(IMAGE_REPO_URL_Prod):$(ProdTag)'
+            imagePullSecrets: bmprodacr1919

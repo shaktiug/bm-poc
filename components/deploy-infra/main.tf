@@ -8,4 +8,5 @@ module "bm-infra" {
   source     = "../../modules/bm-infra"
   infra_vars = local.infra_vars[each.key]
   env        = var.env
+  location   = var.location
 }
