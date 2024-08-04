@@ -207,7 +207,7 @@ stages:
             kubernetesServiceConnection: $(K8S_CLS_Dev)
             namespace: $(K8S_NAMESPACE_Dev)
             secretName: bmdevacr1919
-            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_Dev)     
+            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_DEV_CONN)     
         
       
       - bash: |
@@ -244,7 +244,7 @@ stages:
             kubernetesServiceConnection: $(K8S_CLS_Dev)
             namespace: $(K8S_NAMESPACE_Dev)
             secretName: bmdevacr1919
-            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_Dev)
+            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_DEV_CONN)
            
       
       - bash: |
@@ -299,7 +299,7 @@ stages:
             kubernetesServiceConnection: $(K8S_CLS_Prod)
             namespace: $(K8S_NAMESPACE_Prod)
             secretName: bmprodacr1919
-            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_Prod)
+            dockerRegistryEndpoint: $(CONTAINER_REGISTRY_PROD_CONN)
             
       
       - bash: |
