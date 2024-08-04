@@ -31,7 +31,7 @@ variables:
     - name: latest
       value: 'latest-aks'
     - name: vmImageName
-      value: 'ubuntu-latest'
+      value: 'ado-pool'
     - ${{ if contains(parameters.Environment, 'Prod') }}:
         - group: bm-prod-deploy-variable
 
