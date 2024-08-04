@@ -72,7 +72,7 @@ stages:
           displayName: 'Docker Build Dev'
           inputs:
             command: build
-            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            containerRegistry: $(CONTAINER_REGISTRY_DEV_CONN)
             repository: $(IMAGE_REPO_Dev)
             Dockerfile: $(dockerfilePath)
             tags: |
@@ -82,7 +82,7 @@ stages:
           displayName: 'Docker Push Dev'
           inputs:
             command: push
-            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            containerRegistry: $(CONTAINER_REGISTRY_DEV_CONN)
             repository: $(IMAGE_REPO_Dev)
             tags: |
                     $(tagDev)
@@ -135,7 +135,7 @@ stages:
           displayName: 'Docker Build UAT'
           inputs:
             command: build
-            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            containerRegistry: $(CONTAINER_REGISTRY_DEV_CONN)
             repository: $(IMAGE_REPO_Dev)
             Dockerfile: $(dockerfilePath)
             tags: |
@@ -144,7 +144,7 @@ stages:
           displayName: 'Docker Build Prod'
           inputs:
             command: build
-            containerRegistry: $(CONTAINER_REGISTRY_Prod)
+            containerRegistry: $(CONTAINER_REGISTRY_PROD_CONN)
             repository: $(IMAGE_REPO_Prod)
             Dockerfile: $(dockerfilePath)
             tags: |
@@ -153,7 +153,7 @@ stages:
           displayName: 'Docker Push UAT'
           inputs:
             command: push
-            containerRegistry: $(CONTAINER_REGISTRY_Dev)
+            containerRegistry: $(CONTAINER_REGISTRY_DEV_CONN)
             repository: $(IMAGE_REPO_Dev)
             tags: |
                 $(Tag.tag)          
@@ -161,7 +161,7 @@ stages:
           displayName: 'Docker Push Prod'
           inputs:
             command: push
-            containerRegistry: $(CONTAINER_REGISTRY_Prod)
+            containerRegistry: $(CONTAINER_REGISTRY_PROD_CONN)
             repository: $(IMAGE_REPO_Prod)
             tags: |
                 $(Tag.tag)
