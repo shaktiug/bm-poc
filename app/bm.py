@@ -1,7 +1,9 @@
 from flask import Flask, jsonify
 import psycopg2
 from psycopg2 import OperationalError
+from dotenv import load_dotenv
 import configparser
+import os
 
 bm = Flask(__name__)
 
@@ -11,8 +13,8 @@ config.read('config.ini')
 
 db_config = {
     'user': config['postgres']['user'],
-    'password': config['postgres']['password'],
-    'host': config['postgres']['host'],
+    'password': os.getenv('DBPASS'),
+    'host': os.getenv('DBHOST'),
     'database': config['postgres']['database']
 }
 
