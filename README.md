@@ -7,7 +7,7 @@ The application overview is as follows
 api <=> db
 ```
 
-The folder `app` respectively describe how to install and run the app.
+The folder `app` respectively describe how to install and run the app and run `unit test` cases.
 The folder `components` includes the code to deploy terraform which uses modules present in the `modules` folder.
 The folder `k8s` contains `helm` charts which are also being managed by `terraform`.
 
