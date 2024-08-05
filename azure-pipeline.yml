@@ -7,21 +7,6 @@ parameters:
 trigger:
 - none
 
-# resources:      
-#   repositories: 
-#   - repository: cep-idb-app
-#     name: Web_and_Commerce_Solutions/_git/cep-idb-app
-#     type: git 
-#     ref: release-app
-#   - repository: cep-idb-monitor
-#     name: Web_and_Commerce_Solutions/_git/cep-idb-monitor
-#     type: git 
-#     ref: master
-#   - repository: BM-repo
-#     name: Web_and_Commerce_Solutions/_git/BM-repo
-#     type: git 
-#     ref: release-api
-
 variables:
     - group: bm-dev-deploy-variables
     - name: tagDev
@@ -44,10 +29,10 @@ variables:
       value: '1.0'
 
 stages:
-- stage: sonar_scan
+- stage: Linting_Testing
   displayName: Lint_Unit_Test_Sonar_Scan
   jobs:
-  - job: Sonar_Scan
+  - job: Linting_Testing
     displayName: Lint_Unit_Test_Sonar_Scan
     pool:
       name: $(vmImageName)
@@ -79,13 +64,6 @@ stages:
         extraProperties: |
           sonar.python.version=3.x
 
-    - script: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements.txt
-        # Add any other build steps here
-      displayName: 'Install dependencies and prepare environment'
-
     - task: SonarQubeAnalyze@5
 
     - task: SonarQubePublish@5
@@ -93,6 +71,7 @@ stages:
         pollingTimeoutSec: '300'
     
     - bash: |
+          echo "******************UNIT TEST********************"
           cd app/
           python -m unitest test_bm.py
       displayName: 'Unit Test'
