@@ -13,6 +13,7 @@ The folder `k8s` contains `helm` charts which are also being managed by `terrafo
 
 To deploy infra use `modules/bm-inra` which requires `infra.auto.tfvars` to be set as follows.
 
+```
 infra_vars = {
   "dev" = {
     "dev-1" = {
@@ -53,9 +54,11 @@ infra_vars = {
     }
   }
 }
+```
 
 To segregate environments, use workspaces named `dev` and `prod` and have respective tfvars files for them. For example :
 
+```
 dev.tfvars
 ===============
 env="dev"
@@ -63,6 +66,7 @@ location = {
     value  = "East US 2"
     suffix = "eastus2" # The corresponding value of location that is used by Azure in naming AKS resource groups
   }
+```
 
 
 
