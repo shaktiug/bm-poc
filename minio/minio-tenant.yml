@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio
+---
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: minio-tenant
+  namespace: minio
+spec:
+  credsSecret:
+    name: minio-creds-secret
+  image: minio/minio:RELEASE.2023-08-23T00-03-45Z
+  mountPath: /export
+  replicas: 4
+  pools:
+    - servers: 4
+      volumesPerServer: 1
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes: [ "ReadWriteOnce" ]
+          resources:
+            requests:
+              storage: 10Gi
