@@ -1,0 +1,145 @@
+// -------------------------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License. See License.txt in the project root for license information.
+// --------------------------------------------------------------------------------------------
+
+package appgw
+
+import (
+	"encoding/base64"
+	"fmt"
+	"sort"
+
+	n "github.com/Azure/azure-sdk-for-go/services/network/mgmt/2021-03-01/network"
+	"github.com/Azure/go-autorest/autorest/to"
+	v1 "k8s.io/api/core/v1"
+	networking "k8s.io/api/networking/v1"
+
+	"github.com/Azure/application-gateway-kubernetes-ingress/pkg/brownfield"
+	"github.com/Azure/application-gateway-kubernetes-ingress/pkg/events"
+	"github.com/Azure/application-gateway-kubernetes-ingress/pkg/sorter"
+)
+
+// getSslCertificates obtains all SSL Certificates for the given Ingress object.
+func (c *appGwConfigBuilder) getSslCertificates(cbCtx *ConfigBuilderContext) *[]n.ApplicationGatewaySslCertificate {
+	if c.mem.certs != nil {
+		return c.mem.certs
+	}
+	secretIDCertificateMap := make(map[secretIdentifier]*string)
+
+	for _, ingress := range cbCtx.IngressList {
+		for k, v := range c.getSecretToCertificateMap(ingress) {
+			secretIDCertificateMap[k] = v
+		}
+	}
+
+	sslCertificates := []n.ApplicationGatewaySslCertificate{}
+	for secretID, cert := range secretIDCertificateMap {
+		sslCertificates = append(sslCertificates, c.newCert(secretID, cert))
+	}
+
+	// Merge certs from k8s ingress with existing appgw certs
+	if c.appGw.SslCertificates != nil {
+		// MergePools would produce unique list of pools based on Name. Blacklisted pools, which have the same name
+		// as a managed pool would be overwritten.
+		sslCertificates = brownfield.MergeCerts(*c.appGw.SslCertificates, sslCertificates)
+	}
+
+	sort.Sort(sorter.ByCertificateName(sslCertificates))
+	c.mem.certs = &sslCertificates
+	return &sslCertificates
+}
+
+func (c *appGwConfigBuilder) getSecretToCertificateMap(ingress *networking.Ingress) map[secretIdentifier]*string {
+	secretIDCertificateMap := make(map[secretIdentifier]*string)
+	for _, tls := range ingress.Spec.TLS {
+		if len(tls.SecretName) == 0 {
+			continue
+		}
+
+		tlsSecret := secretIdentifier{
+			Name:      tls.SecretName,
+			Namespace: ingress.Namespace,
+		}
+
+		// add hostname-tlsSecret mapping to a per-ingress map
+		if cert := c.k8sContext.CertificateSecretStore.GetPfxCertificate(tlsSecret.secretKey()); cert != nil {
+			secretIDCertificateMap[tlsSecret] = to.StringPtr(base64.StdEncoding.EncodeToString(cert))
+		} else {
+			logLine := fmt.Sprintf("Unable to find the secret associated to secretId: [%s]", tlsSecret.secretKey())
+			c.recorder.Event(ingress, v1.EventTypeWarning, events.ReasonSecretNotFound, logLine)
+		}
+	}
+
+	return secretIDCertificateMap
+}
+
+func (c *appGwConfigBuilder) getCertificate(ingress *networking.Ingress, hostname string, hostnameSecretIDMap map[string]secretIdentifier) (*string, *secretIdentifier) {
+	if hostnameSecretIDMap == nil {
+		return nil, nil
+	}
+	secID, exists := hostnameSecretIDMap[hostname]
+	if !exists {
+		// check if wildcard exists
+		secID, exists = hostnameSecretIDMap[""]
+	}
+	if !exists {
+		// no wildcard or matched certificate
+		return nil, nil
+	}
+
+	cert, exists := c.getSecretToCertificateMap(ingress)[secID]
+	if !exists {
+		// secret referred does not correspond to a certificate
+		return nil, nil
+	}
+	return cert, &secID
+}
+
+func (c *appGwConfigBuilder) newHostToSecretMap(ingress *networking.Ingress) map[string]secretIdentifier {
+	hostToSecretMap := make(map[string]secretIdentifier)
+	for _, tls := range ingress.Spec.TLS {
+		if len(tls.SecretName) == 0 {
+			continue
+		}
+
+		tlsSecret := secretIdentifier{
+			Name:      tls.SecretName,
+			Namespace: ingress.Namespace,
+		}
+
+		// add hostname-tlsSecret mapping to a per-ingress map
+		cert := c.k8sContext.CertificateSecretStore.GetPfxCertificate(tlsSecret.secretKey())
+		if cert == nil {
+			continue
+		}
+
+		// default secret
+		if len(tls.Hosts) == 0 {
+			hostToSecretMap[""] = tlsSecret
+		}
+
+		for _, hostname := range tls.Hosts {
+			// default secret
+			if len(hostname) == 0 {
+				hostToSecretMap[""] = tlsSecret
+			} else {
+				hostToSecretMap[hostname] = tlsSecret
+			}
+		}
+	}
+	return hostToSecretMap
+}
+
+func (c *appGwConfigBuilder) newCert(secretID secretIdentifier, cert *string) n.ApplicationGatewaySslCertificate {
+	sslCertName := secretID.secretFullName()
+	return n.ApplicationGatewaySslCertificate{
+		Etag: to.StringPtr("*"),
+		Name: to.StringPtr(sslCertName),
+		ID:   to.StringPtr(c.appGwIdentifier.sslCertificateID(sslCertName)),
+		ApplicationGatewaySslCertificatePropertiesFormat: &n.ApplicationGatewaySslCertificatePropertiesFormat{
+			Data:     cert,
+			Password: to.StringPtr("msazure"),
+		},
+	}
+}

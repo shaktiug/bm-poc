@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: websocket-ingress
+  annotations:
+    kubernetes.io/ingress.class: azure/application-gateway
+    appgw.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  rules:
+    - host: ws.contoso.com
+      http:
+        paths:
+          - path: /
+            backend:
+              service:
+                name: websocket-service
+                port:
+                  number: 80
+            pathType: Exact

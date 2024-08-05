@@ -1,0 +1,115 @@
+# Verbosity level of the App Gateway Ingress Controller
+verbosityLevel: 3
+
+# Reconcile period is time period after which AGIC will re-configure Application Gateway if the current state differs from the expected state.
+# If not specified, periodic reconcile is turned off. Range: 30 - 300 (seconds)
+# reconcilePeriodSeconds: 30
+
+image:
+  repository: XXREGISTRYXX
+  tag: XXVERSIONXX
+  pullPolicy: Always
+
+
+kubernetes:
+
+  # Namespace(s) AGIC watches; Leaving this blank watches all namespaces;
+  # Accepts one or many comma-separated values
+  watchNamespace:
+
+  # Port for AGIC's HTTP API endpoint
+  httpServicePort: 8123
+
+  # Enables monitoring of MultiClusterIngress instead of Ingress resources
+  multiClusterMode: false
+
+  # Specify the scheduling options
+  nodeSelector: {}
+    # disktype: dentro
+  tolerations: []
+  affinity: {}
+
+  # Pod security context
+  securityContext:
+    runAsUser: 0
+
+  # Container security context
+  containerSecurityContext: {}
+    #readOnlyRootFilesystem: true
+
+  # Add pod level annotations
+  podAnnotations: {}
+
+  # Specify resource quota for agic pod
+  resources: {}
+    #limits:
+    #  cpu: 200m
+    #  memory: 100Mi
+    #requests:
+    #  cpu: 100m
+    #  memory: 100Mi
+
+  # Add additional volumes and volume mounts to the pod
+  volumes: {}
+    #extraVolumes:
+    #- name: tmp
+    #  emptyDir: {}
+    #extraVolumeMounts:
+    #- name: tmp
+    #  mountPath: /tmp
+
+  # Set this to override the default ingress class value. DEFAULT: azure/application-gateway
+  # This can be used to segregate ingress controllers in the same namespace
+  # ingressClass: agic-2
+
+  # Set Ingress class resource to use the IngressClass V1 resource with Ingress V1
+  ingressClassResource:
+    name: azure-application-gateway
+    enabled: true
+    default: false
+    controllerValue: "azure/application-gateway"
+
+################################################################################
+# Specify which application gateway the ingress controller will manage
+# Specity which cloud environment will be used AZURECHINACLOUD,AZUREGERMANCLOUD,AZUREPUBLICCLOUD,AZUREUSGOVERNMENTCLOUD default: AZUREPUBLICCLOUD
+#
+appgw: {}
+#   environment: AZUREPUBLICCLOUD
+#   subscriptionId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+#   resourceGroup: myResourceGroup
+#   name: myApplicationGateway
+#   # Whether to force private IP for all the listeners on Application Gateway
+#   usePrivateIP: false
+#   subResourceNamePrefix: "myPrefix"
+
+################################################################################
+# Specify the authentication with Azure Resource Manager
+#
+# Two authentication methods are available:
+# - Option 1: AAD-Pod-Identity (https://github.com/Azure/aad-pod-identity)
+# armAuth:
+#   type: aadPodIdentity
+#   identityResourceID: <>
+#   identityClientID:  <>
+#
+# - Option 2: ServicePrincipal as a kubernetes secret
+# armAuth:
+#   type: servicePrincipal
+#
+#   # Generate this value with:
+#   #   az ad sp create-for-rbac --subscription <subscription-uuid> --sdk-auth | base64 -w0
+#   secretJSON: <base64-encoded-JSON-blob>
+#
+# - Option 3: Workload Identity (https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview)
+# armAuth:
+#   type: workloadIdentity
+#   identityClientID:  <>
+
+################################################################################
+# (Legacy: use `kubernetes.nodeSelector` instead) Specify the scheduling options
+nodeSelector: {}
+
+################################################################################
+# Specify if the cluster is RBAC enabled or not
+rbac:
+  enabled: false # true/false

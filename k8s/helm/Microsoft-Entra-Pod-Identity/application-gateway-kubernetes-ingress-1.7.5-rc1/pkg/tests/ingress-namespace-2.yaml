@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-roastery
+  namespace: factory-ns
+spec:
+  tls:
+  - hosts:
+    - cafe.contoso.com
+    secretName: secret-token-ath3x
+  rules:
+  - host: cafe.contoso.com
+    http:
+      paths:
+      - path: /
+        backend:
+          service:
+            name: roastery-service
+            port:
+              number: 80
+        pathType: Exact
