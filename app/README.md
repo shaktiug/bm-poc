@@ -3,13 +3,13 @@
 ## Install the python packages for the api tier:
 
 ```sh
-â†’ pip install -r requirements.txt 
+ pip install -r requirements.txt 
 ```
 
 ## start the app
 
 ```sh
-â†’ python -m flask run bm.py
+ python -m flask run bm.py
 ```
 
 ## NOTE this app uses these env variables:
