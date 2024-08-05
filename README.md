@@ -72,4 +72,6 @@ location = {
 
 # Diagram of the Application
 
+![](BM.png)
+
 
